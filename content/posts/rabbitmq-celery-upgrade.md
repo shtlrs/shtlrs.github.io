@@ -1,19 +1,35 @@
 +++
 date = '2025-12-21T13:25:56+01:00'
 draft = true
-title = 'Migrating Celery tasks with ETAs'
+title = 'Upgrading RabbitMQ To v4.x Without Breaking Celery ETA Tasks'
 +++
+
+Upgrading from RabbitMQ v3 to v4 came with impacts on how we use Celery, and on the type of resources we used in the broker.
+
+With some instances reaching 8M messages/day and zero downtime allowed, we needed a custom migration approach that allow us to
+change those resource types, and preserve the same behavior when using Celery.
+
+<!--more-->
+
+## Quick Glossary
+If you're not familiar with some of these technologies/terms, here's what you need to know:
+
+---------
+- **Celery**: A task queue system for Python. Think of it as a way to say "do this work later" instead of blocking your web request.
+- **RabbitMQ**: A message broker that holds these tasks until workers are ready to process them. Like a post office for code.
+- **ETA (Estimated Time of Arrival)**: In Celery, this means "don't run this task until this specific time." Used for scheduled tasks.
+- **QoS (Quality of Service)**: Controls how many messages a worker can hold at once. Global QoS let workers hold tasks in memory.
+- **vhost (virtual host)**: A way to separate different "environments" within the same RabbitMQ instance. Like having multiple isolated post offices in one building.
+- **Shovel**: A RabbitMQ plugin that copies messages from one queue to another. Simple, but too simple for our needs.
+---------
 
 ## Context
 
-At [Kraken](https://kraken.tech), we use [Celery](https://docs.celeryq.dev/) heavily to dispatch long-running tasks 
+At [Kraken](https://kraken.tech), we use [Celery](https://docs.celeryq.dev/) heavily to dispatch long-running tasks.
 to workers in order to not block the main request process for too long, which is a classic implementation of [task queues](insert link here).
 
 Our Celery publishers/workers publish/consume from [RabbitMQ](https://www.rabbitmq.com/), which was running on version 3.13.7.1.
 
-```
-Improve this section later
-```
 
 The platform team had to perform an update of the RabbitMQ version we had to the latest 4.2.2, and all v4.x version 
 come with these major changes:
@@ -25,7 +41,7 @@ come with these major changes:
 These changes come with great impact on Kraken:
 
 * The removal of the global QoS meant that all tasks with an ETA/countdown will [block the worker until the ETA arrives](https://docs.celeryq.dev/en/v5.6.0/getting-started/backends-and-brokers/rabbitmq.html#limitations)
-* We had to switch to [Quorum Queues](https://www.rabbitmq.com/docs/quorum-queues) since we were using 
+* We had to switch to [Quorum Queues](https://www.rabbitmq.com/docs/quorum-queues) since we were using
 classic queues with [Classic Queue Mirroring](https://www.rabbitmq.com/docs/3.13/ha), which has been deprecated in 4.x versions
 
 ## Challenges
@@ -129,13 +145,11 @@ migrating by making the following environment variable changes:
 * Set `USE_QUORUM_QUEUES` to `True`
 * Change the `broker_url` celery setting to connect to `qhost` instead of `chost` so that we publish and consume tasks from `qhost`
 
-```
+When we deploy code changes at Kraken, we use Kubernetes with rolling updates. This means pods get replaced gradually, not all at once.
 
-Should i talk about pod rollout, and say we use k8s ? 
-Should i mention that while pods were being rolled out, some messages would still go to `chost`, but tha's fine because they will be 
-routed later ?
+During the rollout, some pods were still connected to `chost` while others had switched to `qhost`.
 
-```
+This temporary split was actually fine—any messages still going to `chost` would be transferred over in Phase 3.
 
 ### Phase 3: Transferring the messages from `chost` to `qhost`
 > If you want to easily understand the idea and the code snippets in this phase, 

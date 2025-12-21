@@ -1,23 +1,21 @@
-  {{ define "main" }}
-  <div class="container" role="main">
-      {{ if .IsHome }}
-          <!-- Your landing page content -->
-          {{ .Content }}
-
-          <h2>Recent Posts</h2>
-          <div class="posts-list">
-              {{ range first 5 site.RegularPages }}
-                  {{ partial "preview.html" . }}
-              {{ end }}
-          </div>
-          <p><a href="/posts">View all posts →</a></p>
-      {{ else }}
-          <!-- Regular list page -->
-          <div class="posts-list">
-              {{ range .Paginator.Pages }}
-                  {{ partial "preview.html" . }}
-              {{ end }}
-          </div>
-      {{ end }}
-  </div>
-  {{ end }}
+{{ define "main" }}
+<div class="container" role="main">
+    {{ if .IsHome }}
+    {{ .Content }}
+    <h2>Recent Posts</h2>
+    <div class="posts-list">
+        {{ range first 5 site.RegularPages }}
+        {{ partial "preview.html" . }}
+        {{ end }}
+    </div>
+    <p><a href="/posts">View all posts →</a></p>
+    {{ else }}
+    <!-- Regular list page -->
+    <div class="posts-list">
+        {{ range .Paginator.Pages }}
+        {{ partial "preview.html" . }}
+        {{ end }}
+    </div>
+    {{ end }}
+</div>
+{{ end }}
