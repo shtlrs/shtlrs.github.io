@@ -7,7 +7,7 @@ title = 'Migrating Celery tasks with ETAs'
 ## Context
 
 At [Kraken](https://kraken.tech), we use [Celery](https://docs.celeryq.dev/) heavily to dispatch long-running tasks 
-to workers in order to not block the main request process for too long, which is a classic.
+to workers in order to not block the main request process for too long, which is a classic implementation of [task queues](insert link here).
 
 Our Celery publishers/workers publish/consume from [RabbitMQ](https://www.rabbitmq.com/), which was running on version 3.13.7.1.
 
