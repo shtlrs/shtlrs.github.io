@@ -71,7 +71,6 @@ At first glance, this sounds like a perfect job for RabbitMQ's [shovel](https://
 
 Instead, we had to transform messages during transfer. The idea was to replicate what [Celery does internally](https://github.com/celery/celery/blob/0527296acb1f1790788301d4395ba6d5ce2a9704/celery/app/base.py#L854-L876) when Native Delayed Delivery is enabled: extract the ETA header, calculate the appropriate delay-based routing key, and route to the right exchange. If you want to understand how this works under the hood, [this guide](https://docs.particular.net/transports/rabbitmq/delayed-delivery) explains the mechanics well.
 
-
 Here's the core logic (simplified for clarity):
 
 {{< code python >}}
@@ -91,10 +90,11 @@ def get_routing_details(method, properties, queue_name):
 
     return target_routing_key, target_exchange_name
 
-source_conn = pika.BlockingConnection(pika.URLParameters("amqps://user:pwd@host:port/chost"))
-source_channel = source_conn.channel()
-dest_conn = pika.BlockingConnection(pika.URLParameters("amqps://user:pwd@host:port/qhost"))
-dest_channel = dest_conn.channel()
+chost_connection_string = read_from_env("CHOST_CONNECTION_STRING")
+qhost_connection_string = read_from_env("QHOST_CONNECTION_STRING")
+
+source_channel = pika.BlockingConnection(pika.URLParameters(chost_connection_string)).channel()
+dest_channel = pika.BlockingConnection(pika.URLParameters("amqps://user:pwd@host:port/qhost")).channel()
 
 for method, properties, body in source_channel.consume("target_queue"):
     try:
@@ -106,7 +106,11 @@ for method, properties, body in source_channel.consume("target_queue"):
         source_conn.channel().basic_nack(delivery_tag=method.delivery_tag, requeue=True)
 {{< /code >}}
 
-This is simplified pseudocode to illustrate the concept. Our production version uses `aio_pika` for async I/O (to avoid blocking), multiprocessing to handle high throughput, message backups for disaster recovery, and extensive logging to track everything.
+
+#### Some notes on the shoveling part:
+* The above is pseudocode to illustrate the concept. Our production version uses `aio_pika` for async I/O (to avoid blocking), multiprocessing to handle high throughput, message backups for disaster recovery, and extensive logging to track everything.
+* The script was deployed to run as a daemon, and would only work if `USE_QUORUM_QUEUES` was set to `True`.
+* More mechanics were in place to determine if there were any messages to transfer in the first place, do transfers in batches, etc.
 
 
 ### Phase 4 & 5: Cleanup and Upgrade
