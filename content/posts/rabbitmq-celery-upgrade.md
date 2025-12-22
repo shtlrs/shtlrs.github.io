@@ -4,7 +4,7 @@ draft = true
 title = 'Upgrading RabbitMQ To v4.x Without Breaking Celery ETA Tasks'
 +++
 
-Upgrading to RabbitMQ v4 threatened breaking our entire usage of Celery, more specifically tasks with ETAs.
+Upgrading to RabbitMQ v4 threatened to break our entire usage of Celery, more specifically tasks with ETAs.
 
 At 8M messages/day with zero downtime tolerance, we needed a migration strategy that preserves delayed task execution while switching from classic to quorum queues.
 
@@ -31,7 +31,7 @@ At [Kraken](https://kraken.tech), we use [Celery](https://docs.celeryq.dev/) to 
 Our migration strategy:
 
 1. Create a new [vhost](https://www.cloudamqp.com/blog/what-is-a-rabbitmq-vhost.html) (`qhost`), which will host quorum queues bound to topic exchanges
-2. Configure application code to support both queue types via feature flag
+2. Configure application code to support both queue types via a feature flag
 3. Transfer messages from old vhost (`chost`) to new vhost without losing ETA information
 4. Decommission `chost`
 5. [Rolling upgrade](https://www.rabbitmq.com/docs/rolling-upgrade) to RabbitMQ v4
