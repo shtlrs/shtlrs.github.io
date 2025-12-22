@@ -1,6 +1,6 @@
 +++
 date = '2025-12-21T13:25:56+01:00'
-draft = true
+draft = false
 title = 'Upgrading RabbitMQ To v4.x Without Breaking Celery ETA Tasks'
 +++
 
