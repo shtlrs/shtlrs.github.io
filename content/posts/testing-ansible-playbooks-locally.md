@@ -11,7 +11,7 @@ A "bad" pattern we had is that we always tested these playbooks in production. I
 pretty controversial topic, and I've worked in a lot of companies who do this, or cheated their way around it, but that's
 off-topic for now.
 
-This led me to setting up a way to easily test our playbooks, but on a similar environment, without running the risk of
+This led us to setting up a way to easily test our playbooks, but on a similar environment, without running the risk of
 unintentionally performing an undesired/destructive action or whatever.
 
 
@@ -45,10 +45,10 @@ The project root's will be at the `infra` directory
     ├── roles/
     │   └── hello_world/
     │       └── tasks/
-    │           └── main.yml/
+    │           └── main.yml
     └── inventory/
-        ├── hosts.yaml/
-        └── vagrant_hosts.yaml/
+        ├── hosts.yaml
+        └── vagrant_hosts.yaml
 
 ```
 
@@ -162,7 +162,7 @@ Vagrant.configure("2") do |config|
         # We assign a static IP for the managed node to easily identify it
         hopper.vm.network "private_network", ip: "192.168.56.3", virtualbox__intnet: true
         hopper.vm.hostname = "hopper"
-        # Disable any folder syncing, car the machines are supposedly fresh/empty
+        # Disable any folder syncing, as the machines are supposedly fresh/empty
         hopper.vm.synced_folder '.', '/vagrant', disabled: true
         
         # Chose the provider to create the VM. 
@@ -179,7 +179,7 @@ so that we can easily configure and target it in `Ansible`'s host inventory.
 
 ### Complete VagrantFile content
 
-This is included here just to see what the `Vagrantfile` will finally look like one we've sutured all the previously
+This is included here just to see what the `Vagrantfile` will finally look like once we've combined all the previously
 explained sections.
 
 
@@ -257,18 +257,29 @@ ansible-playbook playbook.yml --inventory inventory/vagrant_hosts.yml
 ```
 
 You can verify that the `hello_world` role ran by running the following commands
-```bash
-vagrant ssh hopper
 
-# This will display "Hello World" in the console, proving the role ran successfully
-cat ~/hello.txt
+```bash
+vagrant ssh hopper -c "cat ~/hello.txt"
+```
+
+This will display "Hello World" in the console, proving the role ran successfully
+
+> It's important to note that whenever you change something, e.g. the roles, the playbook, etc. you're gonna have to
+> sync those into the VM by running `vagrant rsync`.
+
+## Cleanup
+
+When you're done testing or want to start fresh, simply destroy all VMs by running:
+
+```bash
+vagrant destroy -f
 ```
 
 ## Final thoughts
 While I was writing this, it came to my knowledge that there is an `Ansible` provisioner that can be used to do all of this
 but differently.
 
-However, I still wanted to demonstrate how I actually did it back then.
+However, I still wanted to demonstrate how we actually did it back then.
 
 I must say that this is obviously not the only way to test playbooks locally, but it is the one we decided to use back then.
 
@@ -285,11 +296,10 @@ wants to test this end to end.
 ### Playbook.yml
 
 {{< code yaml >}}
-- name:
+- name: Setup infra
   hosts: all
   roles:
     - hello_world
-
 {{< /code >}}
 
 
@@ -298,21 +308,19 @@ wants to test this end to end.
 {{<code yaml>}}
 - name: Create hello world file in user's home directory
   ansible.builtin.copy:
-  content: "Hello world"
-  dest: "{{ ansible_env.HOME }}/hello.txt"
-  mode: 'a=r'
-  {{< /code >}}
+    content: "Hello world"
+    dest: "{{ ansible_env.HOME }}/hello.txt"
+    mode: 'a=r'
+{{< /code >}}
 
 ### vagrant_hosts.yml
 
 {{<code yaml>}}
-
 all:
-hosts:
-hopper:
-ansible_host: 192.168.56.3
-ip: 192.168.56.3
-access_ip: 192.168.56.3
+  hosts:
+    hopper:
+      ansible_host: 192.168.56.3
+      ip: 192.168.56.3
+      access_ip: 192.168.56.3
 {{< /code >}}
-
 
