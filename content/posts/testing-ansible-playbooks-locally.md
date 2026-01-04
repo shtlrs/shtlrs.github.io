@@ -40,7 +40,8 @@ The project root's will be at the `infra` directory
 
 ```text
 └── infra/
-    ├── playbook.yml/
+    ├── Vagrantfile
+    ├── playbook.yml
     ├── roles/
     │   └── hello_world/
     │       └── tasks/
@@ -51,11 +52,13 @@ The project root's will be at the `infra` directory
 
 ```
 
+* `Vagrantfile`: The `Vagrant` configuration that we'll use to configure our VMs to simulate our servers.
 * `playbook.yml`: The `Ansible` playbook that orchestrates all the roles/tasks that need to run on our infra
 * `roles/hello_world/tasks/main.yml`: The main task of the `hello_world` [Ansible Role](https://docs.ansible.com/projects/ansible/latest/playbook_guide/playbooks_reuse_roles.html)
 * `inventory/hosts.yaml`: The production hosts file
 * `inventory/vagrant_hosts.yaml`: The hosts to use when testing the playbooks locally with `Vagrant`
 
+You can find the content of all of these files in the [File content section](#file-contents)
 
 ## Setting Up Vagrant 
 Very quickly, `Vagrant` is a tool that allows you to configure/provision/manage virtual machines on your host in complete isolation.
@@ -232,7 +235,7 @@ vagrant up
 vagrant provision control --provision-with setup_ssh 
 ```
 
-### Running The Playbooks
+## Running The Playbooks
 
 Once the VMs are provisioned, we can now move on to testing our `Ansible` playbooks.
 
@@ -261,14 +264,55 @@ vagrant ssh hopper
 cat ~/hello.txt
 ```
 
-### Alternative options
+## Final thoughts
 While I was writing this, it came to my knowledge that there is an `Ansible` provisioner that can be used to do all of this
-but differently. I still wanted to demonstrate the way I did before I discovered this without this provisioner.
+but differently.
+
+However, I still wanted to demonstrate how I actually did it back then.
 
 I must say that this is obviously not the only way to test playbooks locally, but it is the one we decided to use back then.
 
 I might make updates to this post at some point to illustrate how we could the Ansible provisioner instead, or maybe even
 test the playbooks on a docker container instead of using `Vagrant`.
 
+
+
+## File contents
+
+This section exists to display the contents of all the different files that take part of this tutorial, in case someone
+wants to test this end to end.
+
+### Playbook.yml
+
+{{< code yaml >}}
+- name:
+  hosts: all
+  roles:
+    - hello_world
+
+{{< /code >}}
+
+
+### roles/hello_world/tasks/main.yml
+
+{{<code yaml>}}
+- name: Create hello world file in user's home directory
+  ansible.builtin.copy:
+  content: "Hello world"
+  dest: "{{ ansible_env.HOME }}/hello.txt"
+  mode: 'a=r'
+  {{< /code >}}
+
+### vagrant_hosts.yml
+
+{{<code yaml>}}
+
+all:
+hosts:
+hopper:
+ansible_host: 192.168.56.3
+ip: 192.168.56.3
+access_ip: 192.168.56.3
+{{< /code >}}
 
 
