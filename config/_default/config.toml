@@ -2,7 +2,6 @@ baseURL = 'https://shtlrs.com/'
 languageCode = 'en-us'
 title = 'Amrou Bellalouna'
 theme = "hugotex"
-googleAnalytics = "G-KB6F4X6RDZ"
 
 [params]
 customCSS = ["css/styles.css"]
