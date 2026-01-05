@@ -12,7 +12,7 @@
     {{ else }}
     <!-- Regular list page -->
     <div class="posts-list">
-        {{ range .Paginator.Pages }}
+        {{ range .Pages.Reverse }}
         {{ partial "preview.html" . }}
         {{ end }}
     </div>
