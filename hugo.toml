@@ -2,7 +2,7 @@ baseURL = 'https://shtlrs.com/'
 languageCode = 'en-us'
 title = 'Amrou Bellalouna'
 theme = "hugotex"
-#ignoreLogs = ['warning-goldmark-raw-html']
+googleAnalytics = "G-KB6F4X6RDZ"
 
 [params]
 customCSS = ["css/styles.css"]
